@@ -4,12 +4,24 @@
 #include <stack>
 #include <cmath>
 #include <algorithm>
+#define PI 3.141592
 using namespace std;
 
 pair <int, int> p;
 vector <pair<int, int> > v;
 vector <pair<int, float> > c;
-stack <pair<int, int> > s;
+stack <pair<int, float> > s;
+int ans=0;
+
+bool checkClock(float now){
+	float pre = s.top().second;
+	if(pre < PI){
+		if(pre<now && pre+PI>now ) return false;
+		return true;
+	}
+	if(now<pre && now>pre-PI) return true;
+	return false;
+}
 
 bool compare(pair<int, float> start, pair<int, float> end){
 	return start.second > end.second;
@@ -17,38 +29,67 @@ bool compare(pair<int, float> start, pair<int, float> end){
 
 float findCos(int i){
 	float x,y;
-	x = v.at(i).first - s.top().first;
-	y = v.at(i).second - s.top().second;
+	x = v.at(i).first - v.at(s.top().first).first;
+	y = v.at(i).second - v.at(s.top().first).second;
 	
 	return x/sqrt(pow(x,2)+pow(y,2));
 }
 
+float findAngle(int index){
+	return acosf(findCos(index));
+}
+
+void findAns(int index){
+	if(index == c.size()) return;
+	
+	float angle = findAngle(c.at(index).first);
+	if(v.at(c.at(index).first).second < v.at(s.top().first).second) angle += PI;
+	
+	if(s.top().second == -100) s.push(make_pair(c.at(index).first, angle));
+	else {
+		int flag = 1;
+		while(flag){
+			if(checkClock(angle)) flag = 1;
+			else flag = 0;
+			
+			if(flag){
+				s.pop();
+				angle = findAngle(c.at(index).first);
+			}
+		}
+		s.push(make_pair(c.at(index).first, angle));
+	}
+	
+	findAns(index+1);
+	return;
+}
+
 int main() {
-	int n;
+	int n,cnt;
 	scanf("%d",&n);
 	
 	for(int i=0;i<n;i++){
 		scanf("%d %d",&p.first, &p.second);
-		if(s.empty()) s.push(p);
-		else if(s.top().second>p.second ||
-				(s.top().first > p.first &&
-				 s.top().second == p.second)){
+		
+		if(s.empty()) s.push(make_pair(i,-100));
+		else if(v.at(s.top().first).second > p.second ||
+				(v.at(s.top().first).first > p.first &&
+				 v.at(s.top().first).second == p.second)){
 			s.pop();
-			s.push(p);
+			s.push(make_pair(i,-100));
 		}
 		v.push_back(p);
 	}
 	
 	for(int i=0;i<n;i++){
-		if(s.top() ==  v.at(i)) continue;
+		if(s.top().first == i) continue;
 		c.push_back(make_pair(i,findCos(i)));
 	}
 	
 	sort(c.begin(),c.end(),compare);
 	
-	for(int i=0;i<c.size();i++){
-		printf("%d %lf\n",c.at(i).first, c.at(i).second);
-	}
-	
+	findAns(0);
+	for(cnt=0;!s.empty();cnt++,s.pop());
+	printf("%d",cnt);
 	return 0;
 }
