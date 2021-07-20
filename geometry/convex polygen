@@ -16,6 +16,7 @@ int ans=0;
 bool checkClock(float now){
 	float pre = s.top().second;
 	if(pre < PI){
+		//printf("*\ncompare %lf and %lf : %d\n*\n",pre*180/PI,now*180/PI,(pre<now && pre+PI>now));
 		if(pre<now && pre+PI>now ) return false;
 		return true;
 	}
@@ -36,28 +37,34 @@ float findCos(int i){
 }
 
 float findAngle(int index){
-	return acosf(findCos(index));
+	float angle = acosf(findCos(index));
+	//("pre index %d index %d angle : %lf\n",s.top().first,index,angle*180/PI);
+	if(v.at(index).second < v.at(s.top().first).second) angle = 2*PI-angle;
+	return angle;
 }
 
 void findAns(int index){
 	if(index == c.size()) return;
+	int now = c.at(index).first;
+	float angle = findAngle(now);
+	if(now == s.top().first) {
+		findAns(index+1);
+		return;
+	}
 	
-	float angle = findAngle(c.at(index).first);
-	if(v.at(c.at(index).first).second < v.at(s.top().first).second) angle += PI;
-	
-	if(s.top().second == -100) s.push(make_pair(c.at(index).first, angle));
+	if(s.top().second == -100) s.push(make_pair(now, angle));
 	else {
-		int flag = 1;
-		while(flag){
-			if(checkClock(angle)) flag = 1;
-			else flag = 0;
-			
-			if(flag){
+		while(1){
+			if(checkClock(angle)){
+				if(s.top().second == -100) break;
+				//printf("%d와 시계방향이라 %d삭제\n",now,s.top().first);
 				s.pop();
-				angle = findAngle(c.at(index).first);
+				angle = findAngle(now);
 			}
+			else break;
 		}
-		s.push(make_pair(c.at(index).first, angle));
+		//printf("스택에 %d %lf추가\n\n",now,angle*180/PI);
+		s.push(make_pair(now, angle));
 	}
 	
 	findAns(index+1);
@@ -70,6 +77,7 @@ int main() {
 	
 	for(int i=0;i<n;i++){
 		scanf("%d %d",&p.first, &p.second);
+		v.push_back(p);
 		
 		if(s.empty()) s.push(make_pair(i,-100));
 		else if(v.at(s.top().first).second > p.second ||
@@ -78,7 +86,6 @@ int main() {
 			s.pop();
 			s.push(make_pair(i,-100));
 		}
-		v.push_back(p);
 	}
 	
 	for(int i=0;i<n;i++){
@@ -88,8 +95,10 @@ int main() {
 	
 	sort(c.begin(),c.end(),compare);
 	
+	//for(int i=0;i<n-1;i++) printf("%d %lf\n",c.at(i).first,c.at(i).second);
+	
 	findAns(0);
-	for(cnt=0;!s.empty();cnt++,s.pop());
+	for(cnt=0;!s.empty();cnt++,s.pop()) ;//printf("%d\n",s.top().first);
 	printf("%d",cnt);
 	return 0;
 }
