@@ -26,4 +26,4 @@ int main(){
 		
 	dp(0,0);
 	printf("%d",ans);
-} 
+}  
